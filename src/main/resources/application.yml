@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: visa-slot-monitor
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    com.payperless.visaslot: INFO
+
+monitor:
+  # how often to poll the SuperSaaS schedule
+  check-interval: ${MONITOR_INTERVAL:PT5M}
+  # how far ahead (from "now") to look for available slots
+  lookahead: ${MONITOR_LOOKAHEAD:P30D}
+  # IANA zone the schedule lives in (used to derive day-of-week / open hours)
+  schedule-zone: ${MONITOR_TZ:Asia/Nicosia}
+  # reset the dedup memory every N hours so the user still gets reminded
+  # about a slot that remained available across that boundary
+  dedup-reset: ${MONITOR_DEDUP_RESET:PT24H}
+
+supersaas:
+  base-url: ${SUPERSAAS_BASE_URL:https://www.supersaas.com}
+  schedule-path: ${SUPERSAAS_SCHEDULE_PATH:/schedule/EmbassyofGreeceinCyprus/VISA}
+  # public booking URL handed to the Telegram message
+  booking-url: ${SUPERSAAS_BOOKING_URL:https://www.supersaas.com/schedule/EmbassyofGreeceinCyprus/VISA}
+  # how long the parsed rp_id/token are cached before we re-bootstrap
+  metadata-ttl: ${SUPERSAAS_METADATA_TTL:PT6H}
+  user-agent: ${SUPERSAAS_USER_AGENT:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36}
+  connect-timeout: ${SUPERSAAS_CONNECT_TIMEOUT:PT5S}
+  read-timeout: ${SUPERSAAS_READ_TIMEOUT:PT15S}
+
+telegram:
+  enabled: ${TELEGRAM_ENABLED:true}
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  chat-id: ${TELEGRAM_CHAT_ID:}
+  api-base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
+  connect-timeout: ${TELEGRAM_CONNECT_TIMEOUT:PT5S}
+  read-timeout: ${TELEGRAM_READ_TIMEOUT:PT10S}

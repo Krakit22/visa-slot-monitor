@@ -1,0 +1,22 @@
+services:
+  visa-slot-monitor:
+    build: .
+    container_name: visa-slot-monitor
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN in .env}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:?Set TELEGRAM_CHAT_ID in .env}
+      MONITOR_INTERVAL: ${MONITOR_INTERVAL:-PT5M}
+      MONITOR_LOOKAHEAD: ${MONITOR_LOOKAHEAD:-P30D}
+      MONITOR_TZ: ${MONITOR_TZ:-Asia/Nicosia}
+      MONITOR_DEDUP_RESET: ${MONITOR_DEDUP_RESET:-PT24H}
+      SUPERSAAS_SCHEDULE_PATH: ${SUPERSAAS_SCHEDULE_PATH:-/schedule/EmbassyofGreeceinCyprus/VISA}
+      SUPERSAAS_BOOKING_URL: ${SUPERSAAS_BOOKING_URL:-https://www.supersaas.com/schedule/EmbassyofGreeceinCyprus/VISA}
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75"
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
