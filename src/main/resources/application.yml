@@ -14,7 +14,7 @@ monitor:
   # how often to poll the SuperSaaS schedule
   check-interval: ${MONITOR_INTERVAL:PT5M}
   # how far ahead (from "now") to look for available slots
-  lookahead: ${MONITOR_LOOKAHEAD:P30D}
+  lookahead: ${MONITOR_LOOKAHEAD:P90D}
   # IANA zone the schedule lives in (used to derive day-of-week / open hours)
   schedule-zone: ${MONITOR_TZ:Asia/Nicosia}
   # reset the dedup memory every N hours so the user still gets reminded
