@@ -28,9 +28,11 @@ class TelegramNotifierTest {
         new TelegramNotifier(client, enabledProps(), monitorProps);
 
     AvailableSlot s1 =
-        new AvailableSlot(Instant.parse("2026-05-20T06:00:00Z"), Instant.parse("2026-05-20T06:30:00Z"));
+        new AvailableSlot(
+            Instant.parse("2026-05-20T06:00:00Z"), Instant.parse("2026-05-20T06:30:00Z"), 1, 1);
     AvailableSlot s2 =
-        new AvailableSlot(Instant.parse("2026-05-21T07:00:00Z"), Instant.parse("2026-05-21T07:30:00Z"));
+        new AvailableSlot(
+            Instant.parse("2026-05-21T07:00:00Z"), Instant.parse("2026-05-21T07:30:00Z"), 1, 1);
 
     String msg =
         notifier.renderMessage(
@@ -39,10 +41,50 @@ class TelegramNotifierTest {
             Instant.parse("2026-05-19T10:00:00Z"));
 
     assertThat(msg)
-        .contains("Available VISA appointment slot found")
+        .contains("VISA appointment slot update")
         .contains("2 new slot(s)")
         .contains("Open full schedule")
         .contains("https://www.supersaas.com/schedule/EmbassyofGreeceinCyprus/VISA");
+  }
+
+  @Test
+  void freeSlotsAreTaggedWithFreeCount() {
+    TelegramClient client = Mockito.mock(TelegramClient.class);
+    TelegramNotifier notifier = new TelegramNotifier(client, enabledProps(), monitorProps);
+
+    AvailableSlot single =
+        new AvailableSlot(
+            Instant.parse("2026-05-20T06:00:00Z"), Instant.parse("2026-05-20T06:30:00Z"), 1, 1);
+    AvailableSlot multi =
+        new AvailableSlot(
+            Instant.parse("2026-05-21T07:00:00Z"), Instant.parse("2026-05-21T07:30:00Z"), 3, 5);
+
+    String msg =
+        notifier.renderMessage(
+            List.of(single, multi), "https://example.com", Instant.parse("2026-05-19T10:00:00Z"));
+
+    assertThat(msg).contains("(1 free)").contains("(3 free)");
+  }
+
+  @Test
+  void bookedSlotsAreTaggedAsBooked() {
+    TelegramClient client = Mockito.mock(TelegramClient.class);
+    TelegramNotifier notifier = new TelegramNotifier(client, enabledProps(), monitorProps);
+
+    AvailableSlot booked =
+        new AvailableSlot(
+            Instant.parse("2026-05-20T06:00:00Z"), Instant.parse("2026-05-20T06:30:00Z"), 0, 1);
+    AvailableSlot multiBooked =
+        new AvailableSlot(
+            Instant.parse("2026-05-21T07:00:00Z"), Instant.parse("2026-05-21T07:30:00Z"), 0, 5);
+
+    String msg =
+        notifier.renderMessage(
+            List.of(booked, multiBooked),
+            "https://example.com",
+            Instant.parse("2026-05-19T10:00:00Z"));
+
+    assertThat(msg).contains("(1/1 booked)").contains("(5/5 booked)");
   }
 
   @Test

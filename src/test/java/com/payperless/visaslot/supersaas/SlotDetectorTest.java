@@ -28,8 +28,7 @@ class SlotDetectorTest {
   }
 
   @Test
-  void allBookedSlotsAreFilteredOut() {
-    // Embassy-shaped data: each entry has capacity == booked == 1 (fully taken).
+  void bookedSlotsAreEmittedWithZeroFreeSpots() {
     Instant slotFrom = Instant.parse("2026-06-09T10:00:00Z");
     Instant slotTo = slotFrom.plusSeconds(1800);
     CapacityResponse capacity =
@@ -38,7 +37,8 @@ class SlotDetectorTest {
     Instant from = Instant.parse("2026-05-18T00:00:00Z");
     Instant to = Instant.parse("2026-07-01T00:00:00Z");
 
-    assertThat(detector.detect(metadata(1800), capacity, from, to, NICOSIA)).isEmpty();
+    assertThat(detector.detect(metadata(1800), capacity, from, to, NICOSIA))
+        .containsExactly(new AvailableSlot(slotFrom, slotTo, 0, 1));
   }
 
   @Test
@@ -56,7 +56,7 @@ class SlotDetectorTest {
             Instant.parse("2026-07-01T00:00:00Z"),
             NICOSIA);
 
-    assertThat(slots).containsExactly(new AvailableSlot(slotFrom, slotTo));
+    assertThat(slots).containsExactly(new AvailableSlot(slotFrom, slotTo, 1, 1));
   }
 
   @Test
@@ -74,7 +74,7 @@ class SlotDetectorTest {
             Instant.parse("2026-07-01T00:00:00Z"),
             NICOSIA);
 
-    assertThat(slots).hasSize(1);
+    assertThat(slots).containsExactly(new AvailableSlot(slotFrom, slotTo, 2, 5));
   }
 
   @Test
@@ -120,7 +120,7 @@ class SlotDetectorTest {
   }
 
   @Test
-  void mixedFreeAndBookedAreFilteredCorrectly() {
+  void mixedFreeAndBookedAreAllEmittedWithCorrectStatus() {
     Instant t1 = Instant.parse("2026-06-09T06:00:00Z");
     Instant t2 = Instant.parse("2026-06-09T06:30:00Z");
     Instant t3 = Instant.parse("2026-06-09T07:00:00Z");
@@ -140,7 +140,28 @@ class SlotDetectorTest {
             Instant.parse("2026-07-01T00:00:00Z"),
             NICOSIA);
 
-    assertThat(slots).containsExactly(new AvailableSlot(t2, t2.plusSeconds(1800)));
+    assertThat(slots)
+        .containsExactly(
+            new AvailableSlot(t1, t1.plusSeconds(1800), 0, 1),
+            new AvailableSlot(t2, t2.plusSeconds(1800), 1, 1),
+            new AvailableSlot(t3, t3.plusSeconds(1800), 0, 1));
+  }
+
+  @Test
+  void zeroCapacityEntriesAreSkipped() {
+    Instant slotFrom = Instant.parse("2026-06-09T06:00:00Z");
+    Instant slotTo = slotFrom.plusSeconds(1800);
+    CapacityResponse capacity =
+        new CapacityResponse(List.of(new Appointment(slotFrom, slotTo)), List.of());
+
+    assertThat(
+            detector.detect(
+                metadata(1800),
+                capacity,
+                Instant.parse("2026-05-18T00:00:00Z"),
+                Instant.parse("2026-07-01T00:00:00Z"),
+                NICOSIA))
+        .isEmpty();
   }
 
   @Test

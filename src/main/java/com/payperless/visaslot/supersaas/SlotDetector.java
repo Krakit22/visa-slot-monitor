@@ -10,14 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Filters the {@code app[]} array returned by SuperSaaS's {@code /ajax/capacity} to those slots
- * that are actually bookable.
+ * Maps the {@code app[]} array returned by SuperSaaS's {@code /ajax/capacity} into {@link
+ * AvailableSlot}s the rest of the pipeline tracks.
  *
  * <p>Empirically every published slot — booked or not — is present in {@code app[]}. The JS
  * helper {@code v = i[3] - i[4]} (capacity minus booked) computes the spots-remaining counter,
- * and the cell flips to {@code full_color} when {@code i[3] <= i[4]}. So a slot is "available"
- * only when {@link Appointment#hasFreeSpot()} is true and it does not overlap any exception in
- * {@link CapacityResponse#exceptions()}.
+ * and the cell flips to {@code full_color} when {@code i[3] <= i[4]}. We surface every published
+ * slot here, free or full, and let the {@link com.payperless.visaslot.state.AvailabilityStore}
+ * decide which transitions deserve a notification (first-seen, and booked→free).
  *
  * <p>Crucially this does NOT enumerate hypothetical slots from the schedule's {@code open_times}
  * window. Capacity schedules at this embassy (and most consular SuperSaaS deployments) only
@@ -38,7 +38,7 @@ public class SlotDetector {
     }
     List<AvailableSlot> out = new ArrayList<>();
     for (Appointment a : capacity.appointments()) {
-      if (!a.hasFreeSpot()) {
+      if (a.capacity() <= 0) {
         continue;
       }
       if (a.to().compareTo(from) <= 0 || a.from().compareTo(to) >= 0) {
@@ -47,7 +47,7 @@ public class SlotDetector {
       if (overlapsAny(a.from(), a.to(), capacity.exceptions())) {
         continue;
       }
-      out.add(new AvailableSlot(a.from(), a.to()));
+      out.add(new AvailableSlot(a.from(), a.to(), a.spotsRemaining(), a.capacity()));
     }
     out.sort(AvailableSlot::compareTo);
     return out;

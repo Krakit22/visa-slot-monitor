@@ -56,7 +56,7 @@ public class TelegramNotifier {
     ZoneId zone = monitorProperties.scheduleZone();
     BookingLinkBuilder linkBuilder = new BookingLinkBuilder(bookingUrl);
     StringBuilder sb = new StringBuilder();
-    sb.append("<b>Available VISA appointment slot found</b>\n");
+    sb.append("<b>VISA appointment slot update</b>\n");
     sb.append(slots.size()).append(" new slot(s) since last check:\n\n");
 
     int shown = Math.min(slots.size(), MAX_SLOTS_IN_MESSAGE);
@@ -64,7 +64,13 @@ public class TelegramNotifier {
       AvailableSlot slot = slots.get(i);
       String label = SLOT_FMT.format(slot.from().atZone(zone));
       String href = linkBuilder.buildSlotUrl(slot, checkedAt);
-      sb.append("• <a href=\"").append(escape(href)).append("\">").append(label).append("</a>\n");
+      sb.append("• <a href=\"")
+          .append(escape(href))
+          .append("\">")
+          .append(label)
+          .append("</a> ")
+          .append(statusTag(slot))
+          .append('\n');
     }
     if (slots.size() > shown) {
       sb.append("… and ").append(slots.size() - shown).append(" more\n");
@@ -74,6 +80,16 @@ public class TelegramNotifier {
         .append("\">Open full schedule</a>\n");
     sb.append("Checked at ").append(CHECK_FMT.format(checkedAt.atZone(zone)));
     return sb.toString();
+  }
+
+  private static String statusTag(AvailableSlot slot) {
+    if (slot.capacity() <= 0) {
+      return "";
+    }
+    if (slot.isFree()) {
+      return "(" + slot.freeSpots() + " free)";
+    }
+    return "(" + slot.capacity() + "/" + slot.capacity() + " booked)";
   }
 
   private static String escape(String s) {
